@@ -1,0 +1,186 @@
+\documentclass[12pt, a4paper]{article}
+\title{Relazione progetto ROOT} %argomento
+\date{}
+\author{Stella Baldrati, Giacomo Errani, Riccardo Giuliani}
+
+\setlength{\parindent}{0pt}
+\usepackage{setspace}
+\usepackage[margin=0.5in]{geometry}
+\usepackage{float}
+\usepackage{amsfonts}
+\usepackage{pdfpages}
+\usepackage{verbatim}
+\usepackage[utf8]{inputenc}
+\usepackage{subcaption}
+\usepackage{graphicx}
+
+%\usepackage{siunitx} 
+%\sisetup{
+  %round-mode          = places, % Rounds numbers
+ % round-precision     = 2, % to 2 places
+%}
+
+\graphicspath{ {./images} } %cartella immagini, separata dalla cartella files
+
+\usepackage{listings}
+\usepackage{xcolor}
+
+
+\begin{document}
+
+\maketitle
+
+\section{Introduzione}
+%%inserire un po' di teoria alla base e sintetizzare tutto il contenuto come in un abstract
+
+Negli esperimenti di fisica delle particelle si studiano collisioni e interazioni tra esse.
+A seguito di una collisione si generano circa $10^2-10^4$ particelle di vari tipi. Le più stabili sono rilevabili e classificabili direttamente analizzandone la traiettoria, ma vi sono anche particelle instabili che decadono in brevissimo tempo e non sono rilevabili direttamente. I prodotti del decadimento sono generalmente particelle sufficientemente stabili e quindi rilevabili. 
+\newline
+Il programma qui illustrato simula eventi di collisione, simili a quelli ottenibili tramite un acceleratore, analizza le particelle generate e i decadimenti, esponendone le quantità e distribuzioni tramite grafici ROOT. In particolare, studia il decadimento della K*, analizzando la traccia lasciata dai prodotti del decadimento, individua il picco di massa invariante caratteristico di questa particella.
+
+\section{Struttura del codice}
+%quali classi sono state implementate, con che funzione,
+%quali meccanismi di reimpiego di codice sono stati usati, e perchè
+
+\subsection{Programma di generazione}
+
+Sono state implementate le seguenti classi:
+
+\begin{enumerate}
+\item ParticleType: rappresenta una generica particella stabile mediante massa, carica e tipologia, fornisce un'interfaccia per accedere a questi dati. Implementa inoltre una funzione \verb!GetWidth! che fornisce una larghezza di risonanza nulla ed è necessaria per poter utilizzare il polimorfismo dinamico. 
+Definisce un enum che identifica i tipi di particelle utilizzabili, poi associati alle istanze di ParticleType.
+
+\item ResonanceType: classe derivata di ParticleType, rappresenta il fenomeno di risonanza per una particella instabile con l'attributo larghezza di risonanza e reimplementa \verb!GetWidth! per restituire il valore corretto. 
+
+\item Particle: rappresenta una particella della simulazione, mediante il tipo e la quantità di moto. 
+Fornisce dei metodi per accedere agli attributi della particella, per calcolare la massa invariante ed elaborare un decadimento (funzione \verb!Decay2Body!).
+Definisce un vettore statico (\verb!fParticleTypes!) che memorizza i tipi di particelle, associati alle singole istanze mediante l'attributo \verb!fParticleName!.
+
+\item ProportionGenerator: class template che implementa il generatore secondo definite proporzioni. 
+\item ParticleGenerator: oggetto funzione che incapsula la generazione delle particelle. 
+Fornisce un \verb!operator()! per eseguire la generazione e una funzione \verb!loadParticles()! per caricare i parametri dei tipi di particelle nel vettore \verb!fParticleTypes!.
+
+\item ParticleStorage: struct serializzabile che memorizza i vari istogrammi. 
+
+\end{enumerate}
+
+\subsection{Programma di analisi}
+
+\begin{enumerate}
+\item ParticleAnalyser: incapsula la lettura del file root (con controllo integrità dei dati mediante un cast dinamico) nel costruttore. Fornisce un metodo \verb!GetData! per accedere ai dati, una funzione di analisi dei segnali dei decadimenti (\verb!GetDecaymentSignal!) e una di analisi delle distribuzione di generazione (\verb!GetGenerationFits!). 
+
+\item AnalyserGraphics: incapsula la presentazione dei dati, crea i canvas, configura lo stile, disegna istogrammi e fit.
+
+
+\end{enumerate}
+
+\subsection{Tecniche di reimpiego del codice}
+%note su cosa scrivere: tecniche oop, incapsulamento, uso della classe proportion generator, implementare la funzionalità comune in classi e usando funzioni generiche, nascondendo i dettagli implementativi
+Abbiamo usato le tecniche della programmazione OOP per separare dettagli implementativi e interfaccia, incapsulando le funzioni e rendendo il tutto modulare.
+\newline
+
+In particolare, la classe \verb!ProportionGenerator! si adatta a generare qualsiasi tipo di oggetto, note le istanze generabili e le probabilità.
+\newline
+
+Infine, l'uso del polimorfismo dinamico nelle classi \verb!ParticleType! e \verb!ResonanceType! consente di gestire le particelle stabili e instabili con puntatori di tipo \verb!ParticleType!, trattandole come se fossero dello stesso tipo.
+
+\section{Generazione}
+% specifichiamo che si tratta di eventi separati e non tutte insieme
+
+Sono stati elaborati 10$^5$, in ciascuno dei quali sono state generate 10$^2$ particelle, secondo definite proporzioni, di tipo pione($\pi$), kaone(K), protone(P) e kaone instabile(K*):
+
+\begin{itemize}
+
+\item Tutti i tipi di particelle si presentano nella doppia forma positiva (+) e negativa (-). 
+
+\item La composizione del campione è stata così generata: 40\% pioni positivi, 40\% pioni negativi, 5\% kaoni positivi, 5\% kaoni negativi, 4.5\% protoni positivi, 4.5\% protoni negativi, e 1\% kaoni instabili.
+
+\item Le proprietà cinematiche delle particelle (angolo polare, angolo azimutale, modulo della quantità di moto) sono state generate tramite la generazione Monte Carlo di ROOT, utilizzando le funzioni \verb!TRandom::Rndm()!, 
+\verb!TRandom::Uniform()!,\verb!TRandom::Exp(double mean)!.
+
+\end{itemize}
+
+\subsection{Elaborazione dei decadimenti}
+In ogni evento si generano 1-2 K*, il cui decadimento è elaborato in fase di generazione.
+Da una K* si possono ottenere o una coppia Pione+/Kaone- o Pione-/Kaone+, ciascuna con probaiblità del 50\%.
+
+
+\section{Analisi}
+%Discutere la congruenza delle distribuzioni osservate con i dati in input
+%alla generazione, spiegare brevemente l’approccio seguito per estrarre il segnale
+%della risonanza
+Riportiamo le tabelle delle occorrenze dei tipi di particelle, distribuzione di generazione dei parametri cinematici e segnale della K*.
+
+\begin{table}[H]
+  \begin{center}
+    \caption{Abbondanza delle particelle.}
+    \label{tab:table1}
+    \begin{tabular}{c|c|c} % 
+      \textbf{Specie} & 
+      \textbf{Occorrenze osservate ($10^3$)} & 
+      \textbf{occorrenze attese ($10^3$)}\\
+      
+      \hline
+      $\pi$+ & 4000 $\pm$ 2 & 4000\\
+      $\pi$- & 4000 $\pm$ 2 & 4000\\
+      K+ 	 & 500.0 $\pm$ 0.7 & 500\\
+      K- 	 & 500.0 $\pm$ 0.7 & 500\\
+      P+ 	 & 450.0 $\pm$ 0.7  & 450\\
+      P- 	 & 450.0 $\pm$ 0.7 & 450\\
+      K* 	 & 100.0 $\pm$ 0.3 & 100\\
+     
+
+    \end{tabular}
+  \end{center}
+\end{table}
+
+\begin{table}[H]
+  \begin{center}
+    \caption{Distribuzione angoli polari e azimutali, modulo dell'impulso.}
+    \label{tab:table2}
+    \begin{tabular}{c|c|c|c|c} % 
+      \textbf{Distribuzione} & \textbf{parametri del fit} & \textbf{$\chi$} & \textbf{DOF} & \textbf{$\chi$/DOF}\\
+      \hline
+      Angolo polare & 3.142 $\pm$ 0.005 & x & x & x\\
+      Angolo azimutale & 6.283 $\pm$ 0.005 & x & x & x \\
+      Impulso & X+dx & x & x & x\\
+    \end{tabular}
+  \end{center}
+\end{table}
+
+I valori osservati nelle tabelle \ref{tab:table1} e \ref{tab:table2} sono compatibili con i parametri del generatore di particelle.
+
+\begin{table}[H]
+  \begin{center}
+    \caption{Analisi della K*.}
+    \label{tab:table3}
+    \begin{tabular}{c|c|c|c|c} % 
+      \textbf{Distribuzione e fit} & 
+      \textbf{Media (GeV)} & 
+      \textbf{$\sigma$ (GeV)} & 
+      \textbf{Ampiezza ($10^4$)} & 
+      \textbf{$\chi^2$/DOF}\\
+      
+      \hline
+      Coppie $\pi$/K  & 0.883 $\pm$ 0.004 &0.066 $\pm$ 0.005  & 6.4 $\pm$ 0.4 & 0.99\\
+      Discordi-Concordi & 0.893 $\pm$ 0.009 & 0.05 $\pm$ 0.03 & 8 $\pm$ 5 & 0.72\\
+      Benchmark & 0.8920 $\pm$ 0.0002 & 0.0574 $\pm$ 0.0001 & 7 $\pm$ 0.03  &  4.91\\
+    \end{tabular}
+  \end{center}
+\end{table}
+
+\subsection{Estrazione del segnale di risonanza}
+Per estrarre il segnale di risonanza, abbiamo sfruttato il fatto che il decadimento della K* introduce delle particelle in coppie Pione-Kaone con carica discorde. 
+
+Ci aspettiamo che queste contribuiscano agli istogrammi di massa invariante di \textit{carica discorde} e \textit{coppie Pione-Kaone discordi}.
+
+Al contrario, nei rispettivi istogrammi di carica concorde, ci aspettiamo di osservare solo fondo.
+
+Sottraendo rispettivamente gli istogrammi, i segnali di fondo si elidono e resta il segnale della K*.
+
+
+\section{Appendice}
+
+
+
+\end{document}
