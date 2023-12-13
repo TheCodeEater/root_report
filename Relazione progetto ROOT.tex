@@ -144,9 +144,9 @@ Riportiamo le tabelle delle occorrenze dei tipi di particelle, distribuzione di 
     \begin{tabular}{c|c|c|c|c} % 
       \textbf{Distribuzione} & \textbf{parametri del fit} & \textbf{$\chi$} & \textbf{DOF} & \textbf{$\chi$/DOF}\\
       \hline
-      Angolo polare & 3.142 $\pm$ 0.005 & x & x & x\\
-      Angolo azimutale & 6.283 $\pm$ 0.005 & x & x & x \\
-      Impulso & X+dx & x & x & x\\
+      Angolo polare & 3.142 $\pm$ 0.005 & 102.69 & 99 & 1.04\\
+      Angolo azimutale & 6.283 $\pm$ 0.005 & 92.88 & 95 & 0.98 \\
+      Impulso & -1.0003 $\pm$ 0.0003 & 125.42 & 98 & 1.28\\
     \end{tabular}
   \end{center}
 \end{table}
@@ -159,15 +159,15 @@ I valori osservati nelle tabelle \ref{tab:table1} e \ref{tab:table2} sono compat
     \label{tab:table3}
     \begin{tabular}{c|c|c|c|c} % 
       \textbf{Distribuzione e fit} & 
-      \textbf{Media (GeV)} & 
-      \textbf{$\sigma$ (GeV)} & 
+      \textbf{Media ($\frac{GeV}{c^2}$)} & 
+      \textbf{$\sigma$ ($\frac{GeV}{c^2}$)} & 
       \textbf{Ampiezza ($10^4$)} & 
       \textbf{$\chi^2$/DOF}\\
       
       \hline
-      Coppie $\pi$/K  & 0.883 $\pm$ 0.004 &0.066 $\pm$ 0.005  & 6.4 $\pm$ 0.4 & 0.99\\
-      Discordi-Concordi & 0.893 $\pm$ 0.009 & 0.05 $\pm$ 0.03 & 8 $\pm$ 5 & 0.72\\
-      Benchmark & 0.8920 $\pm$ 0.0002 & 0.0574 $\pm$ 0.0001 & 7 $\pm$ 0.03  &  4.91\\
+      Coppie $\pi$/K  & 0.886 $\pm$ 0.003 &0.051 $\pm$ 0.003  & 8.0 $\pm$ 0.4 & 1.03\\
+      Discordi-Concordi & 0.892 $\pm$ 0.004 & 0.05 $\pm$ 0.03 & 9.0 $\pm$ 0.7 & 0.99\\
+      Benchmark & 0.8918 $\pm$ 0.0002 & 0.0500 $\pm$ 0.0001 & 8 $\pm$ 0.03  &  1.23\\
     \end{tabular}
   \end{center}
 \end{table}
@@ -181,6 +181,17 @@ Al contrario, nei rispettivi istogrammi di carica concorde, ci aspettiamo di oss
 
 Sottraendo rispettivamente gli istogrammi, i segnali di fondo si elidono e resta il segnale della K*.
 Un fit gaussiano consente di estrarre la distribuzione di massa invariante caratteristica della K* e determinarne massa (media della gaussiana) e larghezza di risonanza (deviazione standard).
+
+\begin{figure}[H]
+\centering
+\includegraphics[scale=0.4]{images/DistributionsCanvas.png}
+
+\label{fig:fig1}
+\caption{Distribuzioni di angolo polare, angolo azimutale, modulo dell'impulso e tipo di particella}
+\end{figure}
+
+\subsection{Consistenza delle distribuzioni}
+Le distribuzioni dei parametri cinematici e del tipo di particella (figura \ref{fig:fig1}) sono consistenti con le impostazioni del generatore.
 
 
 \section{Appendice}
