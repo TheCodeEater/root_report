@@ -286,9 +286,9 @@ namespace ResonanceSimulator {
         [[nodiscard]] virtual double GetWidth() const;
 
     private:
-        Type fName; ///name of the particle, expressed as an enum constant
-        double fMass;
-        int fCharge;
+        const Type fName; ///name of the particle, expressed as an enum constant
+        const double fMass;
+        const int fCharge;
     };
 }
 
@@ -334,6 +334,37 @@ namespace ResonanceSimulator {
 }
 \end{verbatim}
 
+\paragraph{ResonanceType.hpp}
+
+\begin{verbatim}
+#ifndef RESONANCETYPE_HPP
+#define RESONANCETYPE_HPP
+
+#include "particles/ParticleType.hpp"
+
+namespace ResonanceSimulator {
+    class ResonanceType : public ParticleType {
+
+    public:
+        ResonanceType(int name, double mass, int charge, double width);
+
+        [[nodiscard]] double GetWidth() const override;
+
+        void Print() const override;
+
+    private:
+        double fWidth;
+    };
+}
+
+#endif
+\end{verbatim}
+
+\paragraph{ResonanceType.cpp}
+\begin{verbatim}
+
+\end{verbatim}
+
 \paragraph{Particle.hpp}
 \begin{verbatim}
 
@@ -344,16 +375,6 @@ namespace ResonanceSimulator {
 
 \end{verbatim}
 
-\paragraph{ResonanceType.hpp}
-
-\begin{verbatim}
-
-\end{verbatim}
-
-\paragraph{ResonanceType.cpp}
-\begin{verbatim}
-
-\end{verbatim}
 
 \paragraph{ProportionGenerator.hpp}
 Questa classe è un template, quindi interamente definita nell'header.
