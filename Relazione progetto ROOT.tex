@@ -33,11 +33,11 @@
 \section{Introduzione}
 %%inserire un po' di teoria alla base e sintetizzare tutto il contenuto come in un abstract
 
-Nella fisica delle particelle, il tipico approccio sperimentale per studiarne proprietà e interazioni si basa sullo studio di collisioni tra esse ad alta velocità. A seguito degli urti, si generano molte particelle (stimate in $10^2-10^4$ per ogni evento di collisione) di vari tipi. 
+L'approccio sperimentale utilizzato in fisica delle particelle per studiarne proprietà e interazioni si basa sullo studio dei prodotti di collisioni ad alta velocità. In seguito a questi urti, si genera un numero di particelle di varie tipologie stimato in $10^2-10^4$ per ogni evento di collisione. 
 \newline
-Le più stabili sono rilevabili e classificabili direttamente analizzandone la traiettoria, ma vi sono anche risonanze (particelle instabili) che decadono in brevissimo tempo e non sono rilevabili direttamente, ma solo mediante i prodotti dei loro decadimenti, che sono generalmente particelle sufficientemente stabili.
+Le particelle più stabili sono direttamente rilevabili e si possono classificare tramite analisi della traiettoria. Vi sono però anche particelle instabili, dette risonanze, che decadono in tempi brevissimi e non sono direttamente rilevabili; per studiarle si rende necessario analizzare i prodotti dei loro decadimenti, che generalmente sono particelle sufficientemente stabili.
 \newline
-Il programma qui illustrato simula eventi di collisione generandone i prodotti, simili a quelli ottenibili tramite un acceleratore, analizza le particelle generate ed elabora i decadimenti, esponendone le quantità e distribuzioni tramite grafici ROOT. 
+Il programma qui illustrato simula eventi di collisione e genera prodotti assimilabili a quelli ottenibili tramite un acceleratore. Analizza poi le particelle generate ed elabora i decadimenti, rappresentandone quantità e distribuzioni tramite grafici ROOT. 
 
 In particolare, consente di studiare il comportamento della risonanza K*, cercandone il picco caratteristico di massa invariante dovuto ai prodotti del suo decadimento nel segnale di fondo.
 
@@ -50,7 +50,7 @@ In particolare, consente di studiare il comportamento della risonanza K*, cercan
 Sono state implementate le seguenti classi:
 
 \begin{enumerate}
-\item ParticleType: rappresenta una generica particella stabile mediante massa, carica e tipologia, fornisce un'interfaccia per accedere a questi dati. Implementa inoltre una funzione \verb!GetWidth! che fornisce una larghezza di risonanza nulla ed è necessaria per poter utilizzare il polimorfismo dinamico. 
+\item ParticleType: rappresenta una generica particella stabile categorizzandola mediante massa, carica e tipologia, e fornisce un'interfaccia per accedere a questi dati. Implementa inoltre una funzione \verb!GetWidth! che fornisce una larghezza di risonanza nulla, necessaria per poter utilizzare il polimorfismo dinamico. 
 Definisce un enum che identifica i tipi di particelle utilizzabili, poi associati alle istanze di ParticleType.
 
 \item ResonanceType: classe derivata di ParticleType, rappresenta il fenomeno di risonanza per una particella instabile con l'attributo larghezza di risonanza e reimplementa \verb!GetWidth! per restituire il valore corretto. 
@@ -63,7 +63,7 @@ Definisce un vettore statico (\verb!fParticleTypes!) che memorizza i tipi di par
 \item ParticleGenerator: oggetto funzione che incapsula la generazione delle particelle. 
 Fornisce un \verb!operator()! per eseguire la generazione e una funzione \verb!loadParticles()! per caricare i parametri dei tipi di particelle nel vettore \verb!fParticleTypes!.
 
-\item ParticleStorage: struct serializzabile che memorizza i vari istogrammi. 
+\item ParticleStorage: struct serializzabile che memorizza i vari istogrammi, generata da ParticleGenerator. 
 
 \end{enumerate}
 
@@ -79,7 +79,7 @@ Fornisce un \verb!operator()! per eseguire la generazione e una funzione \verb!l
 
 \subsection{Tecniche di reimpiego del codice}
 %note su cosa scrivere: tecniche oop, incapsulamento, uso della classe proportion generator, implementare la funzionalità comune in classi e usando funzioni generiche, nascondendo i dettagli implementativi
-Abbiamo usato le tecniche della programmazione OOP per separare dettagli implementativi e interfaccia, incapsulando le funzioni e rendendo il tutto modulare.
+Abbiamo usato le tecniche della programmazione OOP per separare i dettagli implementativi dall'interfaccia, incapsulando le funzioni e rendendo il tutto modulare.
 \newline
 
 In particolare, la classe \verb!ProportionGenerator! si adatta a generare qualsiasi tipo di oggetto, note le istanze generabili e le probabilità.
@@ -152,7 +152,7 @@ Riportiamo le tabelle delle occorrenze dei tipi di particelle, distribuzione di 
 \end{table}
 
 I valori osservati nelle tabelle \ref{tab:table1} e \ref{tab:table2} sono compatibili con i parametri del generatore di particelle.
-I valori di angolo polare e azimutale sono stati adattati ad una distribuzione normalizzata, al contrario di quella prodotta dal programma di generazione.
+I valori di angolo polare e azimutale sono stati adattati ad una distribuzione normalizzata.
 
 \begin{table}[H]
   \begin{center}
@@ -180,7 +180,7 @@ Ci aspettiamo che queste contribuiscano agli istogrammi di massa invariante di \
 
 Al contrario, nei rispettivi istogrammi di carica concorde, ci aspettiamo di osservare solo fondo.
 
-Sottraendo rispettivamente gli istogrammi, i segnali di fondo si elidono e resta il segnale della K*.
+Sottraendo tra loro i rispettivi istogrammi, i segnali di fondo si elidono, lasciando solo il segnale della K*.
 Un fit gaussiano consente di estrarre la distribuzione di massa invariante caratteristica della K* e determinarne massa (media della gaussiana) e larghezza di risonanza (deviazione standard).
 
 \begin{figure}[H]
