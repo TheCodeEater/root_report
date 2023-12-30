@@ -3,6 +3,7 @@
 *.synctex.gz
 *.zip
 *.pdf
+*.dvi
 
 artifacts/
 .idea/modules.xml
