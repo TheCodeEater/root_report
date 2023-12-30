@@ -362,7 +362,27 @@ namespace ResonanceSimulator {
 
 \paragraph{ResonanceType.cpp}
 \begin{verbatim}
+#include "particles/ResonanceType.hpp"
 
+#include <iostream>
+
+namespace ResonanceSimulator {
+
+    ResonanceType::ResonanceType(const int name, double mass, int charge, double width) :
+            ParticleType{name, mass, charge},
+            fWidth{width} {
+
+    }
+
+    double ResonanceType::GetWidth() const {
+        return fWidth;
+    }
+
+    void ResonanceType::Print() const {
+        ParticleType::Print();
+        std::cout << "Resonance: " << fWidth << '\n';
+    }
+}
 \end{verbatim}
 
 \paragraph{Particle.hpp}
@@ -400,11 +420,11 @@ namespace ResonanceSimulator {
  * NOTE: probability is given in percentile in integer values (to avoid FP problems)
  */
     template<typename GEN>
-    class proportionGenerator {
+    class ProportionGenerator {
         /**
          * Struct representing a node of generation, holding values with cumulative weight
          */
-        struct node {
+        struct Node {
             GEN fValue{}; /// Value
             float fCumulativeProbability{}; /// Relevant cumulative probability
         };
@@ -415,7 +435,7 @@ namespace ResonanceSimulator {
     public:
         using probType = float;/// type to represent probability
 
-        explicit proportionGenerator(std::map<GEN, probType> sourceData) :
+        explicit ProportionGenerator(std::map<GEN, probType> sourceData) :
                 fNodes{} {
             //check probability
             auto totalProb = std::accumulate(sourceData.begin(),
@@ -456,14 +476,16 @@ namespace ResonanceSimulator {
         }
 
     private:
-        std::vector<node> fNodes;
+        std::vector<Node> fNodes;
 
 
     };
 
 }
 
-#endif 
+
+#endif
+
 
 \end{verbatim}
 
