@@ -5,3 +5,6 @@
 *.pdf
 
 artifacts/
+.idea/modules.xml
+.idea/root_labemo_report.iml
+.idea/vcs.xml
