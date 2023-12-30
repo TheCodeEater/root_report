@@ -33,11 +33,11 @@
 \section{Introduzione}
 %%inserire un po' di teoria alla base e sintetizzare tutto il contenuto come in un abstract
 
-L'approccio sperimentale utilizzato in fisica delle particelle per studiarne proprietà e interazioni si basa sullo studio dei prodotti di collisioni ad alta velocità. In seguito a questi urti, si genera un numero di particelle di varie tipologie stimato in $10^2-10^4$ per ogni evento di collisione. 
+Nella fisica delle particelle, il tipico approccio sperimentale per studiarne proprietà e interazioni si basa sullo studio di collisioni tra esse ad alta velocità. A seguito degli urti, si generano molte particelle (stimate in $10^2-10^4$ per ogni evento di collisione) di vari tipi. 
 \newline
-Le particelle più stabili sono direttamente rilevabili e si possono classificare tramite analisi della traiettoria. Vi sono però anche particelle instabili, dette risonanze, che decadono in tempi brevissimi e non sono direttamente rilevabili; per studiarle si rende necessario analizzare i prodotti dei loro decadimenti, che generalmente sono particelle sufficientemente stabili.
+Le più stabili sono rilevabili e classificabili direttamente analizzandone la traiettoria, ma vi sono anche risonanze (particelle instabili) che decadono in brevissimo tempo e non sono rilevabili direttamente, ma solo mediante i prodotti dei loro decadimenti, che sono generalmente particelle sufficientemente stabili.
 \newline
-Il programma qui illustrato simula eventi di collisione e genera prodotti assimilabili a quelli ottenibili tramite un acceleratore. Analizza poi le particelle generate ed elabora i decadimenti, rappresentandone quantità e distribuzioni tramite grafici ROOT. 
+Il programma qui illustrato simula eventi di collisione generandone i prodotti, simili a quelli ottenibili tramite un acceleratore, analizza le particelle generate ed elabora i decadimenti, esponendone le quantità e distribuzioni tramite grafici ROOT. 
 
 In particolare, consente di studiare il comportamento della risonanza K*, cercandone il picco caratteristico di massa invariante dovuto ai prodotti del suo decadimento nel segnale di fondo.
 
@@ -50,7 +50,7 @@ In particolare, consente di studiare il comportamento della risonanza K*, cercan
 Sono state implementate le seguenti classi:
 
 \begin{enumerate}
-\item ParticleType: rappresenta una generica particella stabile categorizzandola mediante massa, carica e tipologia, e fornisce un'interfaccia per accedere a questi dati. Implementa inoltre una funzione \verb!GetWidth! che fornisce una larghezza di risonanza nulla, necessaria per poter utilizzare il polimorfismo dinamico. 
+\item ParticleType: rappresenta una generica particella stabile mediante massa, carica e tipologia, fornisce un'interfaccia per accedere a questi dati. Implementa inoltre una funzione \verb!GetWidth! che fornisce una larghezza di risonanza nulla ed è necessaria per poter utilizzare il polimorfismo dinamico. 
 Definisce un enum che identifica i tipi di particelle utilizzabili, poi associati alle istanze di ParticleType.
 
 \item ResonanceType: classe derivata di ParticleType, rappresenta il fenomeno di risonanza per una particella instabile con l'attributo larghezza di risonanza e reimplementa \verb!GetWidth! per restituire il valore corretto. 
@@ -63,7 +63,7 @@ Definisce un vettore statico (\verb!fParticleTypes!) che memorizza i tipi di par
 \item ParticleGenerator: oggetto funzione che incapsula la generazione delle particelle. 
 Fornisce un \verb!operator()! per eseguire la generazione e una funzione \verb!loadParticles()! per caricare i parametri dei tipi di particelle nel vettore \verb!fParticleTypes!.
 
-\item ParticleStorage: struct serializzabile che memorizza i vari istogrammi, generata da ParticleGenerator. 
+\item ParticleStorage: struct serializzabile che memorizza i vari istogrammi. 
 
 \end{enumerate}
 
@@ -79,7 +79,7 @@ Fornisce un \verb!operator()! per eseguire la generazione e una funzione \verb!l
 
 \subsection{Tecniche di reimpiego del codice}
 %note su cosa scrivere: tecniche oop, incapsulamento, uso della classe proportion generator, implementare la funzionalità comune in classi e usando funzioni generiche, nascondendo i dettagli implementativi
-Abbiamo usato le tecniche della programmazione OOP per separare i dettagli implementativi dall'interfaccia, incapsulando le funzioni e rendendo il tutto modulare.
+Abbiamo usato le tecniche della programmazione OOP per separare dettagli implementativi e interfaccia, incapsulando le funzioni e rendendo il tutto modulare.
 \newline
 
 In particolare, la classe \verb!ProportionGenerator! si adatta a generare qualsiasi tipo di oggetto, note le istanze generabili e le probabilità.
@@ -152,7 +152,7 @@ Riportiamo le tabelle delle occorrenze dei tipi di particelle, distribuzione di 
 \end{table}
 
 I valori osservati nelle tabelle \ref{tab:table1} e \ref{tab:table2} sono compatibili con i parametri del generatore di particelle.
-I valori di angolo polare e azimutale sono stati adattati ad una distribuzione normalizzata.
+I valori di angolo polare e azimutale sono stati adattati ad una distribuzione normalizzata, al contrario di quella prodotta dal programma di generazione.
 
 \begin{table}[H]
   \begin{center}
@@ -180,23 +180,23 @@ Ci aspettiamo che queste contribuiscano agli istogrammi di massa invariante di \
 
 Al contrario, nei rispettivi istogrammi di carica concorde, ci aspettiamo di osservare solo fondo.
 
-Sottraendo tra loro i rispettivi istogrammi, i segnali di fondo si elidono, lasciando solo il segnale della K*.
+Sottraendo rispettivamente gli istogrammi, i segnali di fondo si elidono e resta il segnale della K*.
 Un fit gaussiano consente di estrarre la distribuzione di massa invariante caratteristica della K* e determinarne massa (media della gaussiana) e larghezza di risonanza (deviazione standard).
 
 \begin{figure}[H]
 \centering
 \includegraphics[scale=0.4]{images/DistributionsCanvas.png}
 
-\caption{Distribuzioni di angolo polare, angolo azimutale, modulo dell'impulso e tipo di particella}
 \label{fig:fig1}
+\caption{Distribuzioni di angolo polare, angolo azimutale, modulo dell'impulso e tipo di particella}
 \end{figure}
 
 \begin{figure}[H]
 \centering
 \includegraphics[scale=0.4]{images/SignalCanvas.png}
 
-\caption{Distribuzione delle masse invarianti.}
 \label{fig:fig2}
+\caption{Distribuzione delle masse invarianti.}
 \end{figure}
 
 In figura \ref{fig:fig2} sono riportate le distribuzioni di massa invariante. A sinistra, ottenute per sottrazione degli istogrammi di massa invariante Pioni-Kaoni \textit{discorde-concorde}. Al centro, ottenuti per sottrazione degli istogrammi di massa invariante tra tutte le particelle di carica \textit{discorde-concorde}. A destra, le masse invarianti ottenute a partire dalle particelle figlie di una stessa K*.
@@ -249,6 +249,480 @@ int main(int argc, char **argv) {
     return 0;
 }
 \end{verbatim}
+
+\paragraph{ParticleType.hpp}
+
+\begin{verbatim}
+#ifndef PARTICLETYPE_HPP
+#define PARTICLETYPE_HPP
+
+#include <string>
+
+namespace ResonanceSimulator {
+
+    class ParticleType {
+
+    public:
+        enum Type { /// particle type enum
+            P_Pion, N_Pion, P_Kaon, N_Kaon, P_Prot, N_Prot, R_Kaon
+        };
+        enum DecaymentType { /// decay result type enum
+            P1,//P+ K-
+            P2 //P- K+
+        };
+
+        ParticleType(int name, double mass, int charge);
+
+        virtual ~ParticleType() = default;
+
+        virtual void Print() const;
+
+        [[nodiscard]] int GetName() const;
+
+        [[nodiscard]] double GetMass() const;
+
+        [[nodiscard]] int GetCharge() const;
+
+        [[nodiscard]] virtual double GetWidth() const;
+
+    private:
+        const Type fName; ///name of the particle, expressed as an enum constant
+        const double fMass;
+        const int fCharge;
+    };
+}
+
+#endif
+
+
+\end{verbatim}
+
+\paragraph{ParticleType.cpp}
+
+\begin{verbatim}
+#include "particles/ParticleType.hpp"
+#include <iostream>
+
+namespace ResonanceSimulator {
+
+    ParticleType::ParticleType(int name, double mass, int charge) :
+            fName((Type) name),
+            fMass(mass),
+            fCharge(charge) {}
+
+    void ParticleType::Print() const {
+        std::cout << "Name: " << fName << '\n'
+                  << "Mass: " << fMass << '\n'
+                  << "Charge: " << fCharge << '\n';
+    }
+
+    int ParticleType::GetName() const {
+        return fName;
+    }
+
+    double ParticleType::GetMass() const {
+        return fMass;
+    }
+
+    int ParticleType::GetCharge() const {
+        return fCharge;
+    }
+
+    double ParticleType::GetWidth() const {
+        return 0;
+    }
+}
+\end{verbatim}
+
+\paragraph{ResonanceType.hpp}
+
+\begin{verbatim}
+#ifndef RESONANCETYPE_HPP
+#define RESONANCETYPE_HPP
+
+#include "particles/ParticleType.hpp"
+
+namespace ResonanceSimulator {
+    class ResonanceType : public ParticleType {
+
+    public:
+        ResonanceType(int name, double mass, int charge, double width);
+
+        [[nodiscard]] double GetWidth() const override;
+
+        void Print() const override;
+
+    private:
+        double fWidth;
+    };
+}
+
+#endif
+\end{verbatim}
+
+\paragraph{ResonanceType.cpp}
+\begin{verbatim}
+#include "particles/ResonanceType.hpp"
+
+#include <iostream>
+
+namespace ResonanceSimulator {
+
+    ResonanceType::ResonanceType(const int name, double mass, int charge, double width) :
+            ParticleType{name, mass, charge},
+            fWidth{width} {
+
+    }
+
+    double ResonanceType::GetWidth() const {
+        return fWidth;
+    }
+
+    void ResonanceType::Print() const {
+        ParticleType::Print();
+        std::cout << "Resonance: " << fWidth << '\n';
+    }
+}
+\end{verbatim}
+
+\paragraph{Particle.hpp}
+\begin{verbatim}
+//
+// Created by Giacomo Errani on 25/10/23.
+//
+
+#ifndef PARTICLE_HPP
+#define PARTICLE_HPP
+
+#include "particles/ParticleType.hpp"
+#include "particles/ResonanceType.hpp"
+
+#include <memory>
+#include <vector>
+#include <string>
+#include <memory>
+
+
+namespace ResonanceSimulator {
+    class Particle {
+        using pTypeStorage = std::vector<std::unique_ptr<ParticleType>>;
+    public:
+        explicit Particle(int name, double Px = 0, double Py = 0, double Pz = 0);
+
+        [[nodiscard]] int GetParticleName() const;
+
+        static void AddParticleType(int name, double mass, int charge, double width = 0);
+
+        static void PrintParticleList();
+
+        void SetParticleType(int name);
+
+        void PrintData() const;
+
+        void SetP(double px, double py, double pz);
+
+        [[nodiscard]] double GetPx() const;
+
+        [[nodiscard]] double GetPy() const;
+
+        [[nodiscard]] double GetPz() const;
+
+        [[nodiscard]] int GetCharge() const;
+
+        [[nodiscard]] double GetMass() const;
+
+        [[nodiscard]] double GetEnergy() const;
+
+        [[nodiscard]] double InvMass(Particle const &p) const;
+
+        int Decay2body(Particle &dau1, Particle &dau2) const;
+
+    private:
+        void Boost(double bx, double by, double bz);
+
+        static pTypeStorage fParticleType;
+        static constexpr int fMaxNumParticleType{10};
+
+        int fParticleName;
+        double fPx;
+        double fPy;
+        double fPz;
+
+    };
+}
+
+#endif
+
+\end{verbatim}
+
+\paragraph{Particle.cpp}
+\begin{verbatim}
+#include "particles/Particle.hpp"
+
+#include <algorithm>
+#include <iostream>
+#include <numeric>
+#include <cmath>
+#include <cstdlib>
+
+#include "TMath.h"
+
+namespace ResonanceSimulator {
+
+    Particle::Particle(const int name, double Px, double Py, double Pz) :
+            fParticleName{name},
+            fPx{Px},
+            fPy{Py},
+            fPz{Pz} {
+        //check that the requested particle name exist
+        fParticleType.at(name);
+    }
+
+    int Particle::GetParticleName() const {
+        return fParticleName;
+    }
+
+    void Particle::AddParticleType(int name, double mass, int charge, double width) {
+        if (fParticleType.size() == fMaxNumParticleType) {
+            throw std::runtime_error{"Maximum particle number reached!"};
+        }
+        //fParticleType.at(name); //se non c'è, inserisci
+        if (width == 0) { //may cause troubles with FP numbers
+            fParticleType[name] = std::make_unique<ParticleType>(name, mass, charge);
+        } else {
+            fParticleType[name] = std::make_unique<ResonanceType>(name, mass, charge, width);
+        }
+    }
+
+    void Particle::SetParticleType(int name) {
+        fParticleType.at(name);
+        fParticleName = name;
+    }
+
+    void Particle::PrintParticleList() {
+        std::for_each(fParticleType.cbegin(), fParticleType.cend(), [](auto const &node) {
+            node->Print();
+        });
+    }
+
+    void Particle::PrintData() const {
+        std::cout << "Name:" << fParticleName << '\n'
+                  << "PX" << fPx << '\n'
+                  << "PY" << fPy << '\n'
+                  << "PZ" << fPz << '\n';
+    }
+
+    void Particle::SetP(double px, double py, double pz) {
+        fPx = px;
+        fPy = py;
+        fPz = pz;
+    }
+
+    double Particle::GetPx() const {
+        return fPx;
+    }
+
+    double Particle::GetPy() const {
+        return fPy;
+    }
+
+    double Particle::GetPz() const {
+        return fPz;
+    }
+
+    double Particle::InvMass(const Particle &p) const {
+        auto e{GetEnergy() + p.GetEnergy()};
+
+        auto x = fPx + p.GetPx();
+        auto y = fPy + p.GetPy();
+        auto z = fPz + p.GetPz();
+
+        return TMath::Sqrt(e * e - (x * x + y * y + z * z));
+
+    }
+
+    [[nodiscard]] double Particle::GetMass() const {
+        return fParticleType.at(fParticleName)->GetMass();
+    }
+
+    double Particle::GetEnergy() const {
+        return TMath::Sqrt(TMath::Power(GetMass(), 2) +
+                           TMath::Power(fPx, 2) +
+                           TMath::Power(fPy, 2) +
+                           TMath::Power(fPz, 2));
+    }
+
+    //initialise map
+    Particle::pTypeStorage Particle::fParticleType(120);
+
+    int Particle::Decay2body(Particle &dau1, Particle &dau2) const {
+        if (GetMass() == 0.0) {
+            std::cout << "there is no decay if mass is zero";
+            return 1;
+        }
+
+        double massMot = GetMass();
+        double massDau1 = dau1.GetMass();
+        double massDau2 = dau2.GetMass();
+
+        double x1, x2, w, y1;
+
+        double invnum = 1. / RAND_MAX;
+        do {
+            x1 = 2.0 * rand() * invnum - 1.0;
+            x2 = 2.0 * rand() * invnum - 1.0;
+            w = x1 * x1 + x2 * x2;
+        } while (w >= 1.0);
+
+        w = sqrt((-2.0 * log(w)) / w);
+        y1 = x1 * w;
+
+        massMot += fParticleType[fParticleName]->GetWidth() * y1;
+
+        if (massMot < massDau1 + massDau2) {
+            std::cout << "Decayment cannot be preformed because mass is too low in this channel\n";
+            return 2;
+        }
+
+        double pout = sqrt((massMot * massMot - (massDau1 + massDau2) * (massDau1 + massDau2)) *
+                           (massMot * massMot - (massDau1 - massDau2) * (massDau1 - massDau2))) / massMot * 0.5;
+
+        double norm = 2 * M_PI / RAND_MAX;
+
+        double phi = rand() * norm;
+        double theta = rand() * norm * 0.5 - M_PI / 2.;
+        dau1.SetP(pout * sin(theta) * cos(phi), pout * sin(theta) * sin(phi), pout * cos(theta));
+        dau2.SetP(-pout * sin(theta) * cos(phi), -pout * sin(theta) * sin(phi), -pout * cos(theta));
+
+        double energy = sqrt(fPx * fPx + fPy * fPy + fPz * fPz + massMot * massMot);
+
+        double bx = fPx / energy;
+        double by = fPy / energy;
+        double bz = fPz / energy;
+
+        dau1.Boost(bx, by, bz);
+        dau2.Boost(bx, by, bz);
+
+        return 0;
+    }
+
+
+    void Particle::Boost(double bx, double by, double bz) {
+        double energy = GetEnergy();
+
+        //Boost this Lorentz vector
+        double b2 = bx * bx + by * by + bz * bz;
+        double gamma = 1.0 / sqrt(1.0 - b2);
+        double bp = bx * fPx + by * fPy + bz * fPz;
+        double gamma2 = b2 > 0 ? (gamma - 1.0) / b2 : 0.0;
+
+        fPx += gamma2 * bp * bx + gamma * bx * energy;
+        fPy += gamma2 * bp * by + gamma * by * energy;
+        fPz += gamma2 * bp * bz + gamma * bz * energy;
+    }
+
+    int Particle::GetCharge() const {
+        return fParticleType[fParticleName]->GetCharge();
+    }
+
+}
+\end{verbatim}
+
+
+\paragraph{ProportionGenerator.hpp}
+Questa classe è un template, quindi interamente definita nell'header.
+
+\begin{verbatim}
+#ifndef PROPORTIONGENERATOR_HPP
+#define PROPORTIONGENERATOR_HPP
+
+#include "particles/ParticleType.hpp"
+#include <map>
+#include <vector>
+#include <iostream>
+#include <numeric>
+
+#include "TRandom.h"
+
+namespace ResonanceSimulator {
+
+/**
+ * This class generates, based on definite proportions, the elements it is instructed to
+ * @tparam GEN The type of the object to be generated
+ *
+ * NOTE: probability is given in percentile in integer values (to avoid FP problems)
+ */
+    template<typename GEN>
+    class ProportionGenerator {
+        /**
+         * Struct representing a node of generation, holding values with cumulative weight
+         */
+        struct Node {
+            GEN fValue{}; /// Value
+            float fCumulativeProbability{}; /// Relevant cumulative probability
+        };
+        /**
+         * Construct the generator
+         * @param sourceData Map associating values to be generated to relevant probability values
+         */
+    public:
+        using probType = float;/// type to represent probability
+
+        explicit ProportionGenerator(std::map<GEN, probType> sourceData) :
+                fNodes{} {
+            //check probability
+            auto totalProb = std::accumulate(sourceData.begin(),
+                                             sourceData.end(),
+                                             0, [](auto const &acc, auto const &node) {
+                        return acc + node.second; //sum probabilities
+                    });
+
+            if (std::abs(totalProb - 100) < 0.01) { //FP epsilon
+                throw std::runtime_error{"Sum of probability is not 100!"};
+            }
+
+            //allocate space for the nodes
+            fNodes.reserve(sourceData.size());
+            //fill f nodes
+            probType accumulator{0}; //hold accumulate probability
+            for (auto const &node: sourceData) {
+                accumulator += node.second; //accumulate probabilities
+                fNodes.push_back({node.first, accumulator});
+            }
+        }
+
+        /**
+         * Generate function
+         * @return A randomly generated value, based on the input data
+         */
+        GEN operator()() {
+            //genrate value, cast to int
+            probType y{static_cast<probType>(gRandom->Rndm())};
+
+            for (auto const &node: fNodes) {
+                //if the value generated is less than, i am generated
+                if (y < node.fCumulativeProbability) {
+                    return node.fValue; //end cycle
+                }
+            }
+            throw std::runtime_error{"Cannot generate!"};
+        }
+
+    private:
+        std::vector<Node> fNodes;
+
+
+    };
+
+}
+
+
+#endif
+
+
+\end{verbatim}
+
+\paragraph{•}
 
 
 
