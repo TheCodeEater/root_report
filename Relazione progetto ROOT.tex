@@ -387,10 +387,6 @@ namespace ResonanceSimulator {
 
 \paragraph{Particle.hpp}
 \begin{verbatim}
-//
-// Created by Giacomo Errani on 25/10/23.
-//
-
 #ifndef PARTICLE_HPP
 #define PARTICLE_HPP
 
@@ -721,8 +717,643 @@ namespace ResonanceSimulator {
 
 \end{verbatim}
 
-\paragraph{•}
+\paragraph{ParticleGenerator.hpp}
+
+\begin{verbatim}
+#ifndef ROOT_TEMPLATE_PROJECT_PARTICLEGENERATOR_HPP
+#define ROOT_TEMPLATE_PROJECT_PARTICLEGENERATOR_HPP
+
+#include "TRandom3.h"
+#include "generator/ProportionGenerator.hpp"
+#include "particles/Particle.hpp"
+
+#include "particleStorage.hpp"
+
+#include <deque>
+
+namespace ResonanceSimulator {
+
+    /**
+     * This class encapsulates particle generation, decayment processing, invariant masses distributions
+     */
+    class ParticleGenerator {
+        using randGen = TRandom3; /// type to be used as random generator
+        using PTypeList = ParticleType::Type; /// alias to list of possible particle types
+        using PTDecayList = ParticleType::DecaymentType; ///alias to list of possible decayments
+        using PStorage = std::deque<Particle>;
+
+    public:
+        explicit ParticleGenerator(unsigned seed = 0);
+
+        /**
+         * Register particle list into particle container
+         * Data is hard-coded
+         */
+        static void LoadParticles();
+
+        /**
+         * Run the simulation
+         * @param NEvents Number of dacyment events to be processed
+         * @param NParticlesPerEvent Number of paarticles to be generated per event
+         * @return A pointer to a data structure holding the result of the generation
+         *
+         * Note: the returned pointer's structure is dynamically allocated and you are responsible
+         * for its lifetime management. Consider storing it in a smart pointer.
+         */
+        ParticleStorage *operator()(unsigned NEvents = 1e5, unsigned NParticlesPerEvent = 1e2);
+
+    private:
+        //helper functions
+        /**
+         * Helper function used to better ecapsulate the particle generation
+         * @param EventParticles Reference to the container of generated particles
+         * @param DecayProducts Reference to the container of the decay products
+         * @param dataStorage Struct holding histograms
+         */
+        static void CalculateInvariantMass(PStorage const &EventParticles,
+                                           PStorage const &DecayProducts,
+                                           ParticleStorage &dataStorage) ;
+
+        randGen fRandom; /// Random generator
+        ProportionGenerator<PTypeList> fParticleGen;
+        ProportionGenerator<PTDecayList> fDecaymentGen;
+
+        static bool IsSameCharge(const Particle &p, const Particle &p2);
+
+        static bool CheckConcordantDecayCouples(const PTypeList &p1_name, const PTypeList &p2_name);
+
+        static bool CheckDiscordantDecayCouples(const PTypeList &p1_name, const PTypeList &p2_name);
+    };
+
+} // ResonanceSimulator
+
+#endif //ROOT_TEMPLATE_PROJECT_PARTICLEGENERATOR_HPP
+
+\end{verbatim}
+
+\paragraph{ParticleGenerator.cpp}
+
+\begin{verbatim}
+#include "generator/ParticleGenerator.hpp"
+
+#include "particles/Particle.hpp"
+#include "particleStorage.hpp"
+
+#include "TMath.h"
+
+#include "TFile.h"
+
+namespace ResonanceSimulator {
+    void ParticleGenerator::LoadParticles() {
+        Particle::AddParticleType(PTypeList::P_Pion , 0.13957, 1);
+        Particle::AddParticleType(PTypeList::N_Pion, 0.13957, -1);
+        Particle::AddParticleType(PTypeList::P_Kaon, 0.49367, 1);
+        Particle::AddParticleType(PTypeList::N_Kaon, 0.49367, -1);
+        Particle::AddParticleType(PTypeList::P_Prot, 0.93827, 1);
+        Particle::AddParticleType(PTypeList::N_Prot, 0.93827, -1);
+        Particle::AddParticleType(PTypeList::R_Kaon, 0.89166, 0, 0.050);
+    }
+
+    ParticleGenerator::ParticleGenerator(unsigned int seed) :
+            fRandom{seed},
+            fParticleGen{{
+                                 {PTypeList::P_Pion, 0.4},
+                                 {PTypeList::N_Pion, 0.4},
+                                 {PTypeList::P_Kaon, 0.05},
+                                 {PTypeList::N_Kaon, 0.05},
+                                 {PTypeList::P_Prot, 0.045},
+                                 {PTypeList::N_Prot, 0.045},
+                                 {PTypeList::R_Kaon, 0.01}}
+            },
+            fDecaymentGen{{
+                                  {PTDecayList::P1, 0.5},
+                                  {PTDecayList::P2, 0.5}
+                          }
+            } {
+
+    }
+
+    ParticleStorage *ParticleGenerator::operator()(unsigned int NEvents, unsigned int NParticlesPerEvent) {
+        //save into particlestorage
+        std::unique_ptr<ParticleStorage> dataStorage{new ParticleStorage{}};
+        //create default histograms
+        ParticleStorage::MakeDefaultHistograms(*dataStorage);
+        //Particle type
+        PStorage EventParticles{};
+        PStorage DecayProducts{};
+        //run simulation
+        for (unsigned int j = 0; j < NEvents; ++j) {
+            //genero le 100 particelle
+            for (unsigned int i = 0; i < NParticlesPerEvent; ++i) {
+                //generate angles and pulse
+                const double phi{gRandom->Uniform(0, 2 * TMath::Pi())};
+                const double theta{gRandom->Uniform(0, TMath::Pi())};
+                const double P{gRandom->Exp(1)};
+                //add values to test histograms (must be done here)
+                //because they are not tracked afterwards
+                dataStorage->AzimuthalAngles.Fill(phi);
+                dataStorage->PolarAngles.Fill(theta);
+                dataStorage->Impulse.Fill(P);
+
+                //generate particle
+                const PTypeList name{fParticleGen()};
+                //add to histogram - try to move in another phase
+                dataStorage->ParticlesType.Fill(name);
+
+                //if it is a resonance, make it decay
+                if (name == PTypeList::R_Kaon) {
+                    //generate decayment pair
+                    PTypeList name1{}, name2{};
+
+                    //generate decayment couple
+                    if (fDecaymentGen() == PTDecayList::P1) {
+                        name1 = PTypeList::P_Pion;
+                        name2 = PTypeList::N_Kaon;
+                    } else {
+                        name1 = PTypeList::N_Pion;
+                        name2 = PTypeList::P_Kaon;
+                    }
+
+                    Particle p1(name1, 0, 0, 0);
+                    Particle p2(name2, 0, 0, 0);
+                    Particle pRes(PTypeList::R_Kaon, P * TMath::Sin(theta) * TMath::Cos(phi),
+                                  P * TMath::Sin(theta) * TMath::Sin(phi), P * TMath::Cos(theta));
+
+                    if (pRes.Decay2body(p1, p2) != 0) {
+                        throw std::runtime_error("Decay2body failed!");
+                    }
+                    DecayProducts.push_back(p1);
+                    DecayProducts.push_back(p2);
+                    //add separately
+                    EventParticles.push_back(p1);
+                    EventParticles.push_back(p2);
+                } else {
+                    ResonanceSimulator::Particle p(name, P * TMath::Sin(theta) * TMath::Cos(phi),
+                                        P * TMath::Sin(theta) * TMath::Sin(phi), P * TMath::Cos(theta));
+                    EventParticles.push_back(p);
+                    
+                    
+                    //store transverse impulse and energy
+                    const double TransImp = std::sqrt(std::pow(p.GetPx(), 2) + std::pow(p.GetPy(), 2));
+                    dataStorage->TransverseImpulse.Fill(TransImp);
+                    dataStorage->Energies.Fill(p.GetEnergy());
+                }
+            }
+            CalculateInvariantMass(EventParticles, DecayProducts, *dataStorage);
+
+            EventParticles.clear();
+            DecayProducts.clear();
+        }
+
+        //release ownership on object and return raw pointer
+        return dataStorage.release();
+
+    }
+
+    void ParticleGenerator::CalculateInvariantMass(const PStorage &EventParticles,
+                                                   const PStorage &DecayProducts,
+                                                   ParticleStorage &dataStorage) {
+
+        //loop throught the dataset, comparing each particle with the others
+        for (unsigned int i = 0; i < EventParticles.size(); ++i) {
+            auto const &p = EventParticles[i];
+            for (unsigned int k = i+1; k < EventParticles.size(); ++k) {
+                auto const &p2{EventParticles[k]};
+                auto invMass{p.InvMass(p2)};
+
+                PTypeList p1_name{static_cast<PTypeList>(p.GetParticleName())};
+                PTypeList p2_name{static_cast<PTypeList>(p2.GetParticleName())};
+
+                //invariant mass between all particles
+                dataStorage.InvariantMasses.Fill(invMass);
+
+                //invariant mass depending on charge
+
+                //concordant charge
+                if (IsSameCharge(p, p2)) {
+                    dataStorage.InvariantMassesAllc.Fill(invMass);
+
+                    //check that the particle couple is of the decay product type
+                    if (CheckConcordantDecayCouples(p1_name, p2_name)) {
+                        dataStorage.InvariantMassesDecayC.Fill(invMass);
+                    }
+                }
+                    //discordant charge
+                else /*if(!IsSameCharge(p, p2))*/{
+                    dataStorage.InvariantMassesAlld.Fill(invMass);
+
+                    if (CheckDiscordantDecayCouples(p1_name, p2_name)) {
+                        dataStorage.InvariantMassesDecayD.Fill(invMass);
+                    }
+                }
+
+            }
+        }
+        //generate invariant mass for decay products
+        //since they are inserted in pair after each decay
+        //taking 2 each time ensures invariant mass is computed only for children
+        //of the same unstable particle
+        for (unsigned int i = 0; i < DecayProducts.size(); i += 2) {
+            auto &p = DecayProducts[i];
+            dataStorage.InvariantMassesDprod.Fill(p.InvMass(DecayProducts[i + 1]));
+        }
+    }
+
+    bool ParticleGenerator::CheckDiscordantDecayCouples(const PTypeList &p1_name,
+                                                        const PTypeList &p2_name) {
+        if (p1_name == PTypeList::P_Pion) {
+            if (p2_name == PTypeList::N_Kaon) {
+                return true;
+            }
+        } else if (p1_name == PTypeList::P_Kaon) {//symmetric: Kaon+/Pion+
+            if (p2_name == PTypeList::N_Pion) {
+                return true;
+            }
+        }
+        //same with negative
+        if (p1_name == PTypeList::N_Pion) {
+            if (p2_name == PTypeList::P_Kaon) {
+                return true;
+            }
+        } else if (p1_name == PTypeList::N_Kaon) {//symmetric: Kaon+/Pion+
+            if (p2_name == PTypeList::P_Pion) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    bool ParticleGenerator::CheckConcordantDecayCouples(const PTypeList &p1_name,
+                                                        const PTypeList &p2_name) {//decay product check
+//Pion+ / Kaon +
+        if (p1_name == PTypeList::P_Pion) {
+            if (p2_name == PTypeList::P_Kaon) {
+                return true;
+            }
+        } else if (p1_name == PTypeList::P_Kaon) {//symmetric: Kaon+/Pion+
+            if (p2_name == PTypeList::P_Pion) {
+                return true;
+            }
+        }
+        //same with negative
+        if (p1_name == PTypeList::N_Pion) {
+            if (p2_name == PTypeList::N_Kaon) {
+                return true;
+            }
+        } else if (p1_name == PTypeList::N_Kaon) {//symmetric: Kaon+/Pion+
+            if (p2_name == PTypeList::N_Pion) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    bool ParticleGenerator::IsSameCharge(const Particle &p, const Particle &p2) {
+        return (p.GetCharge() * p2.GetCharge()) > 0;
+    }
 
 
+} // ResonanceSimulator
+\end{verbatim}
+
+\subsection{Programma di analisi}
+
+\paragraph{analyser.cpp}
+
+\begin{verbatim}
+#include "TApplication.h"
+#include "TRint.h"
+#include "particleAnalyser.hpp"
+#include "analyserGraphics.hpp"
+#include "TF1.h"
+#include "TStyle.h"
+#include "TROOT.h"
+#include <iostream>
+
+#include "Definitions.hpp"
+
+int main(int argc, char **argv) {    //create root application
+    APP_TYPE app(APP_NAME, &argc, argv);
+
+    //create the logic objects
+    ResonanceSimulator::dataAnalyser analyser("Particle.root");
+
+    //set style
+    //gStyle->SetHistFillColor(kGreen);
+    //gStyle->SetHistLineColor(kRed);
+    gStyle->SetOptStat(1110);
+    gStyle->SetOptFit(111);
+    gROOT->ForceStyle(true);
+
+    //do stuff
+    ResonanceSimulator::AnalyzerGraphics interface{analyser};
+
+    //draw all canvases
+    interface.DrawCanvases();
+
+    //notify that canvas have been drawn
+    interface.GraphicSetup();
+
+    //write histograms to file
+    interface.WriteHistograms();
+
+    interface.PrintFitResult();
+
+    //run application
+    app.Run();
+    return 0;
+}
+\end{verbatim}
+
+\paragraph{analyserGraphics.hpp}
+
+\begin{verbatim}
+#ifndef ANALYSERGRAPHICS_HPP
+#define ANALYSERGRAPHICS_HPP
+
+#include <memory>
+#include <unordered_map>
+#include <vector>
+
+#include "TCanvas.h"
+#include "TPad.h"
+#include "TLegend.h"
+
+#include "particleAnalyser.hpp"
+
+namespace ResonanceSimulator {
+    /**
+     * This class encapsulates graphics for the particle data analysis
+     */
+    class AnalyzerGraphics {
+        using CanvasPtr = std::unique_ptr<TCanvas>;
+        using CanvasCont = std::unordered_map<std::string,CanvasPtr>;
+
+    public:
+        explicit AnalyzerGraphics(DataAnalyser &analyser);
+
+        void GraphicSetup();
+        void DrawCanvases();
+        void WriteHistograms() const;
+        void PrintFitResult() const;
+
+    private:
+        std::shared_ptr<particleStorage> fInputData; /// Pointer to the object handling analysed data
+        std::shared_ptr<SignalResult> fSignalResult;
+        dataAnalyser::GenerationResult fGenerationDistributionFit;
+
+        //canvas with resulting histograms, similar with similar
+        CanvasCont fCanvasContainer;
+
+        void PrintSignalFit(std::string const& initialText, const SignalResult::FitPtr &fit) const;
+    };
+}
+
+#endif 
+\end{verbatim}
+
+\paragraph{analyserGraphics.cpp}
+
+\begin{verbatim}
+#include "analyserGraphics.hpp"
+
+#include <algorithm>
+#include <iostream>
+
+namespace ResonanceSimulator {
+    AnalyzerGraphics::AnalyzerGraphics(dataAnalyser &analyser) :
+            fInputData{analyser.GetData()}, //get input data
+            fSignalResult{analyser.GetDecaymentSignal()}, //run fit
+            fGenerationDistributionFit{analyser.GetGenerationFits()},
+            fCanvasContainer{}{
+        //create canvases
+        {
+        CanvasPtr MassCanvas{new TCanvas("MassCanvas", "Masse Invarianti", 1200, 800)};
+        CanvasPtr DistributionsCanvas{new TCanvas("DistributionsCanvas", "Distribuzioni di generazione", 1200, 800)};
+        CanvasPtr SumCanvas{new TCanvas("SignalCanvas", "Segnali estratti", 1200, 800)};
+        CanvasPtr DynamicsCanvas{new TCanvas("DynamicsCanvas", "Parametri meccanici", 1200, 800)};
+
+        //register canvases
+        //split insertion and allocation to avoid duplicating name
+        //in subscript operator
+        fCanvasContainer[MassCanvas->GetName()] = std::move(MassCanvas);
+        fCanvasContainer[DistributionsCanvas->GetName()] = std::move(DistributionsCanvas);
+        fCanvasContainer[SumCanvas->GetName()] = std::move(SumCanvas);
+        fCanvasContainer[DynamicsCanvas->GetName()] = std::move(DynamicsCanvas);
+    }
+
+    }
+
+    void AnalyzerGraphics::WriteHistograms() const {
+        for(auto& canvas: fCanvasContainer){
+            canvas.second->Print((
+                    std::string{canvas.second->GetName()}+".pdf"
+                    ).c_str());
+            canvas.second->Print((
+                                         std::string{canvas.second->GetName()}+".C"
+                                 ).c_str());
+            canvas.second->Print((
+                                         std::string{canvas.second->GetName()}+".root"
+                                 ).c_str());
+        }
+
+    }
+
+    void AnalyzerGraphics::DrawCanvases() {
+        const char *options{"HIST,SAME"};
+
+        //bind references to ptr for simplicity
+        CanvasPtr& MassCanvas{fCanvasContainer["MassCanvas"]};
+        CanvasPtr& DistributionsCanvas{fCanvasContainer["DistributionsCanvas"]};
+        CanvasPtr& SignalCanvas{fCanvasContainer["SignalCanvas"]};
+        CanvasPtr& DynamicsCanvas{fCanvasContainer["DynamicsCanvas"]};
+
+        //invariant masses
+        MassCanvas->Divide(3, 2);
+
+        MassCanvas->cd(1);
+        fInputData->InvariantMasses.Draw(options);
+        MassCanvas->cd(2);
+        fInputData->InvariantMassesAllc.Draw(options);
+        MassCanvas->cd(3);
+        fInputData->InvariantMassesAlld.Draw(options);
+        MassCanvas->cd(4);
+        fInputData->InvariantMassesDecayC.Draw(options);
+        MassCanvas->cd(5);
+        fInputData->InvariantMassesDecayD.Draw(options);
+        MassCanvas->cd(6);
+        fInputData->InvariantMassesDprod.Draw(options);
+
+        //generation distributions
+        //fix scale on polar/azimuth distributions
+        fInputData->PolarAngles.GetYaxis()->SetRangeUser(0,0.5);
+        fInputData->AzimuthalAngles.GetYaxis()->SetRangeUser(0,0.25);
+
+        DistributionsCanvas->Divide(2, 2);
+        DistributionsCanvas->cd(1);
+        fInputData->PolarAngles.Draw(options);
+        fGenerationDistributionFit["Polar"].Draw("SAME");
+
+        DistributionsCanvas->cd(2);
+        fInputData->AzimuthalAngles.Draw(options);
+        fGenerationDistributionFit["Azimuth"].Draw("SAME");
+
+        DistributionsCanvas->cd(3);
+        fInputData->Impulse.Draw(options);
+        fGenerationDistributionFit["Pulse"].Draw("SAME");
+
+        DistributionsCanvas->cd(4);
+        fInputData->ParticlesType.Draw(options);
+
+        //signal canvas
+        SignalCanvas->Divide(3, 1);
+        SignalCanvas->cd(1);
+        fSignalResult->signal1->Draw(options);
+
+        fSignalResult->fitSignal1.Draw("SAME");
+        SignalCanvas->cd(2);
+        fSignalResult->signal2->Draw(options);
+
+        fSignalResult->fitSignal2.Draw("SAME");
+        SignalCanvas->cd(3);
+        fInputData->InvariantMassesDprod.Draw(options);
+        fSignalResult->fitSignal3.Draw("SAME");
+
+        //mechanical canvas
+        DynamicsCanvas->Divide(2, 1);
+
+        DynamicsCanvas->cd(1);
+        fInputData->TransverseImpulse.Draw(options);
+        DynamicsCanvas->cd(2);
+        fInputData->Energies.Draw(options);
+    }
+
+    void AnalyzerGraphics::GraphicSetup() {
+        for(auto& canvas: fCanvasContainer){
+            canvas.second->Modified();
+            canvas.second->Update();
+        }
+    }
+
+    void AnalyzerGraphics::PrintFitResult() const {
+        auto const& genFit{fGenerationDistributionFit};
+
+        auto const& polar{genFit.at("Polar")};
+        auto const& azimuth{genFit.at("Azimuth")};
+        auto const& impulse{genFit.at("Pulse")};
+        //Print distribution fit
+        std::cout<<"=========== DISTRIBUTION FIT RESULT ===============\n";
+
+        std::cout<<"Impulse: \n"<<"Constant: "<<impulse.GetParameter(0)<<"\n"
+            <<"Slope: "<<impulse.GetParameter(1)<<"\n"
+            <<"Chi/Dof: "<<impulse.GetChisquare()/impulse.GetNDF()<<"\n";
+
+        std::cout<<"=============\n";
+
+        std::cout<<"Azimuthal angle: \n"<<"Constant: "<<azimuth.GetParameter(0)<<"\n"
+            <<"Chi/Dof: "<<azimuth.GetChisquare()/azimuth.GetNDF()<<"\n";
+
+        std::cout<<"=============\n";
+
+        std::cout<<"Polar angle: \n"<<"Constant: "<<polar.GetParameter(0)<<"\n"
+                 <<"Chi/Dof: "<<polar.GetChisquare()/polar.GetNDF()<<"\n";
+
+        std::cout<<"=============\n";
+
+        auto const& discordantPK{fSignalResult->fitSignal1};
+        auto const& discordantALL{fSignalResult->fitSignal2};
+        auto const& benchmark{fSignalResult->fitSignal3};
+
+        std::cout<<"============K* SIGNAL FITS===========\n";
+
+        PrintSignalFit("Discordant Pion-Kaon", discordantPK);
+        PrintSignalFit("All discordant",discordantALL);
+        PrintSignalFit("Benchmark",benchmark);
+    }
+
+    void AnalyzerGraphics::PrintSignalFit(std::string const& initialText, const SignalResult::FitPtr &fit) const {
+        std::cout << initialText<<"\n" << "Constant: " << fit.GetParameter(0) << " +/- "<<fit.GetParError(0) << "\n"
+                  << "Mass (mean): " << fit.GetParameter(1) << " +/- "<<fit.GetParError(1)<<"\n"
+                  << "Resonance width (sigma): " << fit.GetParameter(2)<< " +/- "<<fit.GetParError(2) << "\n"
+                  << "Chi/Dof: " <<fit.GetChisquare()/fit.GetNDF() << "\n";
+
+        std::cout<<"=============\n";
+    }
+}
+
+\end{verbatim}
+
+\paragraph{dataAnalyser.hpp}
+
+\begin{verbatim}
+#ifndef PARTICLEAANALYSER_HPP
+#define PARTICLEAANALYSER_HPP
+
+#include "TFile.h"
+#include "TH1.h"
+#include <string>
+#include <unordered_map>
+
+#include "particleStorage.hpp"
+#include "dataStructures/genCheckResult.hpp"
+#include "dataStructures/signalFitResult.hpp"
+
+namespace ResonanceSimulator {
+    /**
+     * This class encapsulates the data analysis for the K* decayment trace.
+     * The class acts as a mere analysis running tool: results are NOT stored internally. The user is required
+     * to handle their storage
+     *
+     * The class provides shared ownership about source data, to allow further
+     * manipulation before running the true analysis
+     */
+    class DataAnalyser {
+
+    public:
+        using dataContainer = ParticleStorage;
+        using dataContainerPtr = std::shared_ptr<dataContainer>;
+        using dataContainerConstPtr = std::shared_ptr<const dataContainer>;
+        using GenerationResult = std::unordered_map<std::string, TF1>;
+        /**
+         * Construct the analyser class
+         * @param path Path to the ROOT file holding the required objects
+         */
+        explicit DataAnalyser(std::string const &path);
+
+        /**
+         * Get a const reference to underlying dataContainer structure
+         */
+        [[nodiscard]] dataContainerPtr GetData();
+
+        /**
+        * Get a const pointer to underlying dataContainer structure
+        */
+        [[nodiscard]] dataContainerConstPtr GetData() const;
+
+
+        /**
+         * Run the decayment signal analysis
+         * @return A shared pointer to SignalResult structure holding K* decayment signal distribution along
+         * with gaussian fit results
+         *
+         * Note: the returned structure is generated ex-novo at each invocation. Nothing is stored internally
+         * about this analysis result
+         */
+        [[nodiscard]] std::shared_ptr<SignalResult> GetDecaymentSignal() const;
+
+        /**
+         * Fit the histograms of the data used to generate decayment events and particles
+         * @return Struct holding fit result data
+         */
+        [[nodiscard]] GenerationResult GetGenerationFits() const;
+
+    private:
+        dataContainerPtr fData; ///Underlying data container
+    };
+}
+
+#endif 
+
+\end{verbatim}
 
 \end{document}
