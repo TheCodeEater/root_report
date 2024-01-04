@@ -250,6 +250,26 @@ int main(int argc, char **argv) {
 }
 \end{verbatim}
 
+\paragraph{Definitions.hpp}
+\begin{verbatim}
+#ifndef DEFINITIONS_HPP
+#define DEFINITIONS_HPP
+
+//HEADER TO DEFINE MACROS FOR THE TEMPLATE CODE
+
+#define APP_NAME "RootProject"
+#define PROGRAM_ATTACH_CLING
+#define PROGRAM_USE_LOCAL_OWNERSHIP
+
+#ifdef PROGRAM_ATTACH_CLING
+#define APP_TYPE TRint
+#else
+#define APP_TYPE TApplication
+#endif
+
+#endif
+\end{verbatim}
+
 \paragraph{ParticleType.hpp}
 
 \begin{verbatim}
@@ -1354,6 +1374,245 @@ namespace ResonanceSimulator {
 
 #endif 
 
+\end{verbatim}
+
+\paragraph{particleAnalyser.cpp}
+
+
+\begin{verbatim}
+//
+// Created by Giacomo Errani on 02/11/23.
+//
+#include "particleAnalyser.hpp"
+
+#include "particleStorage.hpp"
+#include "dataStructures/signalFitResult.hpp"
+#include "dataStructures/genCheckResult.hpp"
+
+#include "TFitResult.h"
+#include "TFitResultPtr.h"
+
+#include <sstream>
+
+namespace ResonanceSimulator {
+
+    DataAnalyser::DataAnalyser(const std::string &path) :
+    //create empty TList
+            fData{} {
+        //open the file in read only mode
+        TFile data_source{path.c_str(), "READ"};
+
+        //check that the file was opened correctly
+        if (!data_source.IsOpen()) {
+            throw std::runtime_error{"Cannot open root file. Path: " + path};
+        }
+
+        //load data
+        fData = dataContainerPtr{
+                dynamic_cast<dataContainer *>(data_source.Get("ResonanceSimulator::particleStorage"))
+        };
+        //normalize generation distirbutions
+        //for bin width, i chose bin 1 but all bins have the same width
+        fData->PolarAngles.Scale(1./(fData->PolarAngles.GetEntries()*fData->PolarAngles.GetBinWidth(1)));
+        fData->AzimuthalAngles.Scale(1./(fData->AzimuthalAngles.GetEntries()*fData->AzimuthalAngles.GetBinWidth(1)));
+    }
+
+    DataAnalyser::dataContainerPtr DataAnalyser::GetData() {
+        return fData;
+    }
+
+    DataAnalyser::dataContainerConstPtr DataAnalyser::GetData() const {
+        return fData;
+    }
+
+
+    std::shared_ptr<SignalResult> DataAnalyser::GetDecaymentSignal() const {
+        auto signal1 = new TH1F{
+                fData->InvariantMassesDecayD
+                //fData->invMasses["DiscordantPK"]-fData->invMasses["ConcordantPK"]
+        };
+
+        signal1->Add(&fData->InvariantMassesDecayC,-1);
+
+        signal1->SetName("DecaySignal1");
+        signal1->SetTitle("K* signal from decay products");
+
+        auto signal2 = new TH1F{
+                fData->InvariantMassesAlld};
+        signal2->Add(&fData->InvariantMassesAllc,-1);
+
+        signal2->SetName("DecaySignal2");
+        signal2->SetTitle("K* signal from all particles");
+
+        //run fit
+        TF1 fit1{"FIT_SIGNAL_1","gaus",0,10};
+        signal1->Fit(&fit1);
+
+        TF1 fit2{"FIT_SIGNAL_2","gaus",0,10};
+        signal2->Fit(&fit2);
+
+        TF1 fit3{"FIT_SIGNAL_RAW","gaus",0,10};
+        fData->InvariantMassesDprod.Fit(&fit3);
+        //return the 2 signals
+        return std::make_shared<SignalResult>(signal1, signal2, fit1, fit2, fit3);
+    }
+
+    DataAnalyser::GenerationResult DataAnalyser::GetGenerationFits() const {
+        //Get angular data
+        auto &azimuthal{fData->AzimuthalAngles};
+        auto &polar{fData->PolarAngles};
+        auto &pulse{fData->Impulse};
+
+        //fit data storage
+        GenerationResult fits;
+
+        //run the fit, saving results in tfit ptr
+        fits.insert({"Azimuth", TF1{"FIT_AZIMUTH","pol0",0,10}});
+        fits.insert({"Polar", TF1{"FIT_POLAR","pol0",0,10}});
+        fits.insert({"Pulse", TF1{"FIT_PULSE","expo",0,10}});
+
+        azimuthal.Fit(&fits["Azimuth"]);
+        polar.Fit(&fits["Polar"]);
+        pulse.Fit(&fits["Pulse"]);
+
+        return fits;
+    }
+
+}
+\end{verbatim}
+
+\paragraph{particleStorage.hpp}
+\begin{verbatim}
+#ifndef PARTICLESTORAGE_HPP
+#define PARTICLESTORAGE_HPP
+
+#include "TH1.h"
+#include "TObject.h"
+#include <map>
+
+namespace ResonanceSimulator {
+    /**
+     * Store datas to be analysed
+     * The storage type may vary across different versions
+     */
+    struct ParticleStorage : public TObject {
+        using histCont = std::map<std::string, TH1F>;
+        using hist = TH1F;
+
+        ParticleStorage() = default;
+
+        static constexpr unsigned invMassBins{1000};
+        static void MakeDefaultHistograms(particleStorage &storage);
+
+        //Histograms classified by type
+        //generation histograms
+        hist ParticlesType{};
+        hist AzimuthalAngles{};
+        hist PolarAngles{};
+        //dynamics
+        hist Impulse{};
+        hist TransverseImpulse{};
+        hist Energies{};
+        //relativistic
+        hist InvariantMasses{};
+        hist InvariantMassesAlld{};
+        hist InvariantMassesAllc{};
+        hist InvariantMassesDecayC{}; /// Concordant particles that can be generated as result of decay
+        hist InvariantMassesDecayD{}; /// Discordant particles that can be generated as result of decay
+        hist InvariantMassesDprod{};
+
+    ClassDefOverride(particleStorage, 1);
+    };
+}
+
+#endif
+\end{verbatim}
+
+\paragraph{particleStorage.cpp}
+La macro ClassImp è commentata poiché dà errori di compilazone ed è segnalata come deprecata.
+
+\begin{verbatim}
+#include "particleStorage.hpp"
+#include "TMath.h"
+
+namespace ResonanceSimulator {
+    //ClassImp(ParticleStorage);
+    
+    void ParticleStorage::MakeDefaultHistograms(ParticleStorage &storage) {
+        storage.ParticlesType = TH1F("ParticlesType", "Particles Type; Type; Occurrencies", 7, 0, 7);
+        storage.AzimuthalAngles = TH1F("AzimuthalAngles", "Azimuthal Angles; Angle (rad); Occurrencies", 100, 0, 2 * TMath::Pi());
+        storage.PolarAngles = TH1F("PolarAngles", "Polar Angles; Angle (rad); Occurrencies", 100, 0, TMath::Pi());
+        storage.Impulse = TH1F("Impulse", "Impulse; Impulse; Occurrencies", 100, 0, 5);
+        storage.TransverseImpulse = TH1F("TransverseImpulse", "Transverse Impulse; Impulse; Occurencies", 100, 0, 5);
+        storage.Energies = TH1F("Energies", "Energies; Energy (GeV); Occurrencies", 100, 0, 10);
+        storage.InvariantMasses = TH1F("InvariantMasses", "Invariant Masses; Mass (GeV/c2); Occurencies", 100, 0, 10);
+
+        storage.InvariantMassesAlld = TH1F("InvariantMassesAlld", "All discordant charges; Mass (GeV/c2); Occurencies", invMassBins, 0, 10);
+        storage.InvariantMassesAllc = TH1F("InvariantMassesAllc", "All concordant charges; Mass (GeV/c2); Occurencies", invMassBins, 0, 10);
+        storage.InvariantMassesDecayC = TH1F("InvariantMassesDecayC", "Pion/Kaon concordant charges; Mass (GeV/c2); Occurencies", invMassBins, 0, 10);
+        storage.InvariantMassesDecayD = TH1F("InvariantMassesDecayD", "Pion/Kaon discordant charges; Mass (GeV/c2); Occurencies", invMassBins, 0, 10);
+        storage.InvariantMassesDprod = TH1F("InvariantMassesDprod", "K* child couples; Mass (GeV/c2); Occurencies", invMassBins, 0, 10);
+
+        //enable error propagation for histograms
+        storage.InvariantMassesAlld.Sumw2();
+        storage.InvariantMassesAllc.Sumw2();
+        storage.InvariantMassesDecayC.Sumw2();
+        storage.InvariantMassesDecayD.Sumw2();
+    }
+}
+\end{verbatim}
+
+\paragraph{dataStructures/SignalFitResult.hpp}
+
+\begin{verbatim}
+#ifndef SIGNALFITRESULT_HPP
+#define SIGNALFITRESULT_HPP
+
+#include "TH1.h"
+#include "TFitResultPtr.h"
+#include "TF1.h"
+
+#include <memory>
+
+namespace ResonanceSimulator {
+    /**
+ * Struct to hold the result of the required histogram difference
+ */
+    struct SignalResult {
+        using Hist = TH1F*;
+        using FitPtr = TF1;
+
+        SignalResult(Hist signal1, Hist signal2, const FitPtr &fitSignal1, const FitPtr &fitSignal2,
+                     const FitPtr &fitSignal3);
+
+        Hist signal1; /// Difference between the 2 kaon-pion histograms
+        Hist signal2; /// Difference between the concordant and discordant charge histogram
+        FitPtr fitSignal1; /// Fit result ptr for signal 1
+        FitPtr fitSignal2; /// Fit result ptr for signal 2
+        FitPtr fitSignal3; /// Fit result for direct child histogram
+
+
+    };
+
+}
+
+#endif
+\end{verbatim}
+
+\paragraph{dataStructures/SignalFitResult.cpp}
+\begin{verbatim}
+#include "Definitions.hpp"
+
+#include "dataStructures/signalFitResult.hpp"
+
+namespace ResonanceSimulator {
+
+    SignalResult::SignalResult(SignalResult::Hist signal1, SignalResult::Hist signal2,
+                               const SignalResult::FitPtr &fitSignal1, const SignalResult::FitPtr &fitSignal2,
+                               const SignalResult::FitPtr &fitSignal3) : signal1(signal1), signal2(signal2),
+                                                                         fitSignal1(fitSignal1), fitSignal2(fitSignal2),
+                                                                         fitSignal3(fitSignal3) {}
+}
 \end{verbatim}
 
 \end{document}
