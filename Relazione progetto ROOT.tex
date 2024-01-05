@@ -682,7 +682,7 @@ namespace ResonanceSimulator {
          */
         struct Node {
             GEN fValue{}; /// Value
-            float fCumulativeProbability{}; /// Relevant cumulative probability
+            float fCumulativeProbability{}; ///Relevant cumulative probability
         };
         /**
          * Construct the generator
@@ -748,8 +748,8 @@ namespace ResonanceSimulator {
 \paragraph{ParticleGenerator.hpp}
 
 \begin{verbatim}
-#ifndef ROOT_TEMPLATE_PROJECT_PARTICLEGENERATOR_HPP
-#define ROOT_TEMPLATE_PROJECT_PARTICLEGENERATOR_HPP
+#ifndef PARTICLEGENERATOR_HPP
+#define PARTICLEGENERATOR_HPP
 
 #include "TRandom3.h"
 #include "generator/ProportionGenerator.hpp"
@@ -762,12 +762,15 @@ namespace ResonanceSimulator {
 namespace ResonanceSimulator {
 
     /**
-     * This class encapsulates particle generation, decayment processing, invariant masses distributions
+     * This class encapsulates particle generation,
+      decayment processing, 
+      invariant masses distributions
      */
     class ParticleGenerator {
         using randGen = TRandom3; /// type to be used as random generator
         using PTypeList = ParticleType::Type; /// alias to list of possible particle types
-        using PTDecayList = ParticleType::DecaymentType; ///alias to list of possible decayments
+        using PTDecayList = ParticleType::DecaymentType; ///alias to list of 
+        // possible decayments
         using PStorage = std::deque<Particle>;
 
     public:
@@ -785,10 +788,12 @@ namespace ResonanceSimulator {
          * @param NParticlesPerEvent Number of paarticles to be generated per event
          * @return A pointer to a data structure holding the result of the generation
          *
-         * Note: the returned pointer's structure is dynamically allocated and you are responsible
+         * Note: the returned pointer's structure is dynamically allocated 
+         * and you are responsible
          * for its lifetime management. Consider storing it in a smart pointer.
          */
-        ParticleStorage *operator()(unsigned NEvents = 1e5, unsigned NParticlesPerEvent = 1e2);
+        ParticleStorage *operator()(unsigned NEvents = 1e5, 
+        unsigned NParticlesPerEvent = 1e2);
 
     private:
         //helper functions
@@ -808,14 +813,16 @@ namespace ResonanceSimulator {
 
         static bool IsSameCharge(const Particle &p, const Particle &p2);
 
-        static bool CheckConcordantDecayCouples(const PTypeList &p1_name, const PTypeList &p2_name);
+        static bool CheckConcordantDecayCouples(const PTypeList &p1_name, 
+        const PTypeList &p2_name);
 
-        static bool CheckDiscordantDecayCouples(const PTypeList &p1_name, const PTypeList &p2_name);
+        static bool CheckDiscordantDecayCouples(const PTypeList &p1_name, 
+        const PTypeList &p2_name);
     };
 
 } // ResonanceSimulator
 
-#endif //ROOT_TEMPLATE_PROJECT_PARTICLEGENERATOR_HPP
+#endif 
 
 \end{verbatim}
 
@@ -861,7 +868,8 @@ namespace ResonanceSimulator {
 
     }
 
-    ParticleStorage *ParticleGenerator::operator()(unsigned int NEvents, unsigned int NParticlesPerEvent) {
+    ParticleStorage *ParticleGenerator::operator()(unsigned int NEvents, 
+    unsigned int NParticlesPerEvent) {
         //save into particlestorage
         std::unique_ptr<ParticleStorage> dataStorage{new ParticleStorage{}};
         //create default histograms
@@ -904,8 +912,10 @@ namespace ResonanceSimulator {
 
                     Particle p1(name1, 0, 0, 0);
                     Particle p2(name2, 0, 0, 0);
-                    Particle pRes(PTypeList::R_Kaon, P * TMath::Sin(theta) * TMath::Cos(phi),
-                                  P * TMath::Sin(theta) * TMath::Sin(phi), P * TMath::Cos(theta));
+                    Particle pRes(PTypeList::R_Kaon, 
+                      P * TMath::Sin(theta) * TMath::Cos(phi),
+                      P * TMath::Sin(theta) * TMath::Sin(phi), 
+                      P * TMath::Cos(theta));
 
                     if (pRes.Decay2body(p1, p2) != 0) {
                         throw std::runtime_error("Decay2body failed!");
@@ -916,13 +926,18 @@ namespace ResonanceSimulator {
                     EventParticles.push_back(p1);
                     EventParticles.push_back(p2);
                 } else {
-                    ResonanceSimulator::Particle p(name, P * TMath::Sin(theta) * TMath::Cos(phi),
-                                        P * TMath::Sin(theta) * TMath::Sin(phi), P * TMath::Cos(theta));
+                    ResonanceSimulator::Particle p(name, 
+                    P * TMath::Sin(theta) * TMath::Cos(phi),
+                        P * TMath::Sin(theta) * TMath::Sin(phi), 
+                        P * TMath::Cos(theta));
+                        
                     EventParticles.push_back(p);
                     
                     
                     //store transverse impulse and energy
-                    const double TransImp = std::sqrt(std::pow(p.GetPx(), 2) + std::pow(p.GetPy(), 2));
+                    const double TransImp = std::sqrt(std::pow(p.GetPx(), 2) 
+                    + std::pow(p.GetPy(), 2));
+                    
                     dataStorage->TransverseImpulse.Fill(TransImp);
                     dataStorage->Energies.Fill(p.GetEnergy());
                 }
@@ -1012,7 +1027,8 @@ namespace ResonanceSimulator {
     }
 
     bool ParticleGenerator::CheckConcordantDecayCouples(const PTypeList &p1_name,
-                                                        const PTypeList &p2_name) {//decay product check
+                                                        const PTypeList &p2_name) {
+                                                        //decay product check
 //Pion+ / Kaon +
         if (p1_name == PTypeList::P_Pion) {
             if (p2_name == PTypeList::P_Kaon) {
