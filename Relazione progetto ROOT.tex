@@ -1142,14 +1142,16 @@ namespace ResonanceSimulator {
         void PrintFitResult() const;
 
     private:
-        std::shared_ptr<particleStorage> fInputData; /// Pointer to the object handling analysed data
+    /// Pointer to the object handling analysed data
+        std::shared_ptr<particleStorage> fInputData; 
         std::shared_ptr<SignalResult> fSignalResult;
         dataAnalyser::GenerationResult fGenerationDistributionFit;
 
         //canvas with resulting histograms, similar with similar
         CanvasCont fCanvasContainer;
 
-        void PrintSignalFit(std::string const& initialText, const SignalResult::FitPtr &fit) const;
+        void PrintSignalFit(std::string const& initialText, 
+        const SignalResult::FitPtr &fit) const;
     };
 }
 
@@ -1172,10 +1174,17 @@ namespace ResonanceSimulator {
             fCanvasContainer{}{
         //create canvases
         {
-        CanvasPtr MassCanvas{new TCanvas("MassCanvas", "Masse Invarianti", 1200, 800)};
-        CanvasPtr DistributionsCanvas{new TCanvas("DistributionsCanvas", "Distribuzioni di generazione", 1200, 800)};
-        CanvasPtr SumCanvas{new TCanvas("SignalCanvas", "Segnali estratti", 1200, 800)};
-        CanvasPtr DynamicsCanvas{new TCanvas("DynamicsCanvas", "Parametri meccanici", 1200, 800)};
+        CanvasPtr MassCanvas{
+        new TCanvas("MassCanvas", "Masse Invarianti", 1200, 800)};
+        
+        CanvasPtr DistributionsCanvas{
+        new TCanvas("DistributionsCanvas", "Distribuzioni di generazione", 1200, 800)};
+        
+        CanvasPtr SumCanvas{
+        new TCanvas("SignalCanvas", "Segnali estratti", 1200, 800)};
+        
+        CanvasPtr DynamicsCanvas{
+        new TCanvas("DynamicsCanvas", "Parametri meccanici", 1200, 800)};
 
         //register canvases
         //split insertion and allocation to avoid duplicating name
@@ -1315,10 +1324,17 @@ namespace ResonanceSimulator {
         PrintSignalFit("Benchmark",benchmark);
     }
 
-    void AnalyzerGraphics::PrintSignalFit(std::string const& initialText, const SignalResult::FitPtr &fit) const {
-        std::cout << initialText<<"\n" << "Constant: " << fit.GetParameter(0) << " +/- "<<fit.GetParError(0) << "\n"
-                  << "Mass (mean): " << fit.GetParameter(1) << " +/- "<<fit.GetParError(1)<<"\n"
-                  << "Resonance width (sigma): " << fit.GetParameter(2)<< " +/- "<<fit.GetParError(2) << "\n"
+    void AnalyzerGraphics::PrintSignalFit(std::string const& initialText, 
+    const SignalResult::FitPtr &fit) const {
+    
+        std::cout << initialText<<"\n" << "Constant: " << 
+        fit.GetParameter(0) << " +/- "<<fit.GetParError(0) << "\n"
+        
+                  << "Mass (mean): " << fit.GetParameter(1) <<
+                   " +/- "<<fit.GetParError(1)<<"\n"
+                   
+                  << "Resonance width (sigma): " << fit.GetParameter(2)
+                  << " +/- "<<fit.GetParError(2) << "\n"
                   << "Chi/Dof: " <<fit.GetChisquare()/fit.GetNDF() << "\n";
 
         std::cout<<"=============\n";
@@ -1327,7 +1343,7 @@ namespace ResonanceSimulator {
 
 \end{verbatim}
 
-\paragraph{dataAnalyser.hpp}
+\paragraph{particleAnalyser.hpp}
 
 \begin{verbatim}
 #ifndef PARTICLEAANALYSER_HPP
@@ -1339,13 +1355,13 @@ namespace ResonanceSimulator {
 #include <unordered_map>
 
 #include "particleStorage.hpp"
-#include "dataStructures/genCheckResult.hpp"
 #include "dataStructures/signalFitResult.hpp"
 
 namespace ResonanceSimulator {
     /**
      * This class encapsulates the data analysis for the K* decayment trace.
-     * The class acts as a mere analysis running tool: results are NOT stored internally. The user is required
+     * The class acts as a mere analysis running tool: 
+     *results are NOT stored internally. The user is required
      * to handle their storage
      *
      * The class provides shared ownership about source data, to allow further
@@ -1377,11 +1393,12 @@ namespace ResonanceSimulator {
 
         /**
          * Run the decayment signal analysis
-         * @return A shared pointer to SignalResult structure holding K* decayment signal distribution along
+         * @return A shared pointer to SignalResult structure holding K* 
+         *decayment signal distribution along
          * with gaussian fit results
          *
-         * Note: the returned structure is generated ex-novo at each invocation. Nothing is stored internally
-         * about this analysis result
+         * Note: the returned structure is generated ex-novo at each invocation. 
+         *Nothing is stored internally about this analysis result
          */
         [[nodiscard]] std::shared_ptr<SignalResult> GetDecaymentSignal() const;
 
@@ -1404,14 +1421,10 @@ namespace ResonanceSimulator {
 
 
 \begin{verbatim}
-//
-// Created by Giacomo Errani on 02/11/23.
-//
 #include "particleAnalyser.hpp"
 
 #include "particleStorage.hpp"
 #include "dataStructures/signalFitResult.hpp"
-#include "dataStructures/genCheckResult.hpp"
 
 #include "TFitResult.h"
 #include "TFitResultPtr.h"
@@ -1433,12 +1446,17 @@ namespace ResonanceSimulator {
 
         //load data
         fData = dataContainerPtr{
-                dynamic_cast<dataContainer *>(data_source.Get("ResonanceSimulator::particleStorage"))
+                dynamic_cast<dataContainer *>(
+                data_source.Get("ResonanceSimulator::particleStorage"))
         };
+        
         //normalize generation distirbutions
         //for bin width, i chose bin 1 but all bins have the same width
-        fData->PolarAngles.Scale(1./(fData->PolarAngles.GetEntries()*fData->PolarAngles.GetBinWidth(1)));
-        fData->AzimuthalAngles.Scale(1./(fData->AzimuthalAngles.GetEntries()*fData->AzimuthalAngles.GetBinWidth(1)));
+        fData->PolarAngles.Scale(1./
+        (fData->PolarAngles.GetEntries()*fData->PolarAngles.GetBinWidth(1)));
+        
+        fData->AzimuthalAngles.Scale(1./
+        (fData->AzimuthalAngles.GetEntries()*fData->AzimuthalAngles.GetBinWidth(1)));
     }
 
     DataAnalyser::dataContainerPtr DataAnalyser::GetData() {
@@ -1541,8 +1559,10 @@ namespace ResonanceSimulator {
         hist InvariantMasses{};
         hist InvariantMassesAlld{};
         hist InvariantMassesAllc{};
-        hist InvariantMassesDecayC{}; /// Concordant particles that can be generated as result of decay
-        hist InvariantMassesDecayD{}; /// Discordant particles that can be generated as result of decay
+        /// Concordant particles that can be generated as result of decay
+        hist InvariantMassesDecayC{};
+        /// Discordant particles that can be generated as result of decay 
+        hist InvariantMassesDecayD{}; 
         hist InvariantMassesDprod{};
 
     ClassDefOverride(particleStorage, 1);
@@ -1563,19 +1583,56 @@ namespace ResonanceSimulator {
     //ClassImp(ParticleStorage);
     
     void ParticleStorage::MakeDefaultHistograms(ParticleStorage &storage) {
-        storage.ParticlesType = TH1F("ParticlesType", "Particles Type; Type; Occurrencies", 7, 0, 7);
-        storage.AzimuthalAngles = TH1F("AzimuthalAngles", "Azimuthal Angles; Angle (rad); Occurrencies", 100, 0, 2 * TMath::Pi());
-        storage.PolarAngles = TH1F("PolarAngles", "Polar Angles; Angle (rad); Occurrencies", 100, 0, TMath::Pi());
-        storage.Impulse = TH1F("Impulse", "Impulse; Impulse; Occurrencies", 100, 0, 5);
-        storage.TransverseImpulse = TH1F("TransverseImpulse", "Transverse Impulse; Impulse; Occurencies", 100, 0, 5);
-        storage.Energies = TH1F("Energies", "Energies; Energy (GeV); Occurrencies", 100, 0, 10);
-        storage.InvariantMasses = TH1F("InvariantMasses", "Invariant Masses; Mass (GeV/c2); Occurencies", 100, 0, 10);
+        storage.ParticlesType = 
+        TH1F("ParticlesType", "Particles Type; Type; Occurrencies"
+        , 7, 0, 7);
+        
+        storage.AzimuthalAngles = 
+        TH1F("AzimuthalAngles", "Azimuthal Angles; Angle (rad); Occurrencies",
+         100, 0, 2 * TMath::Pi());
+        
+        storage.PolarAngles = 
+        TH1F("PolarAngles", "Polar Angles; Angle (rad); Occurrencies",
+         100, 0, TMath::Pi());
+        
+        storage.Impulse = 
+        TH1F("Impulse", "Impulse; Impulse; Occurrencies",
+         100, 0, 5);
+        
+        storage.TransverseImpulse = 
+        TH1F("TransverseImpulse", "Transverse Impulse; Impulse; Occurencies",
+         100, 0, 5);
+        
+        storage.Energies = 
+        TH1F("Energies", "Energies; Energy (GeV); Occurrencies",
+         100, 0, 10);
+        
+        storage.InvariantMasses = 
+        TH1F("InvariantMasses", "Invariant Masses; Mass (GeV/c2); Occurencies",
+         100, 0, 10);
+        
 
-        storage.InvariantMassesAlld = TH1F("InvariantMassesAlld", "All discordant charges; Mass (GeV/c2); Occurencies", invMassBins, 0, 10);
-        storage.InvariantMassesAllc = TH1F("InvariantMassesAllc", "All concordant charges; Mass (GeV/c2); Occurencies", invMassBins, 0, 10);
-        storage.InvariantMassesDecayC = TH1F("InvariantMassesDecayC", "Pion/Kaon concordant charges; Mass (GeV/c2); Occurencies", invMassBins, 0, 10);
-        storage.InvariantMassesDecayD = TH1F("InvariantMassesDecayD", "Pion/Kaon discordant charges; Mass (GeV/c2); Occurencies", invMassBins, 0, 10);
-        storage.InvariantMassesDprod = TH1F("InvariantMassesDprod", "K* child couples; Mass (GeV/c2); Occurencies", invMassBins, 0, 10);
+        storage.InvariantMassesAlld = 
+        TH1F("InvariantMassesAlld", "All discordant charges; Mass (GeV/c2); Occurencies",
+         invMassBins, 0, 10);
+        
+        storage.InvariantMassesAllc = 
+        TH1F("InvariantMassesAllc", "All concordant charges; Mass (GeV/c2); Occurencies",
+         invMassBins, 0, 10);
+        
+        storage.InvariantMassesDecayC = 
+        TH1F("InvariantMassesDecayC", 
+        "Pion/Kaon concordant charges; Mass (GeV/c2); Occurencies",
+         invMassBins, 0, 10);
+        
+        storage.InvariantMassesDecayD = 
+        TH1F("InvariantMassesDecayD", 
+        "Pion/Kaon discordant charges; Mass (GeV/c2); Occurencies",
+         invMassBins, 0, 10);
+        
+        storage.InvariantMassesDprod = 
+        TH1F("InvariantMassesDprod", "K* child couples; Mass (GeV/c2); Occurencies",
+         invMassBins, 0, 10);
 
         //enable error propagation for histograms
         storage.InvariantMassesAlld.Sumw2();
@@ -1606,11 +1663,15 @@ namespace ResonanceSimulator {
         using Hist = TH1F*;
         using FitPtr = TF1;
 
-        SignalResult(Hist signal1, Hist signal2, const FitPtr &fitSignal1, const FitPtr &fitSignal2,
+        SignalResult(Hist signal1, Hist signal2, 
+        const FitPtr &fitSignal1, const FitPtr &fitSignal2,
                      const FitPtr &fitSignal3);
 
-        Hist signal1; /// Difference between the 2 kaon-pion histograms
-        Hist signal2; /// Difference between the concordant and discordant charge histogram
+		/// Difference between the 2 kaon-pion histograms
+        Hist signal1;
+        /// Difference between the concordant and discordant charge histogram
+        Hist signal2; 
+        
         FitPtr fitSignal1; /// Fit result ptr for signal 1
         FitPtr fitSignal2; /// Fit result ptr for signal 2
         FitPtr fitSignal3; /// Fit result for direct child histogram
@@ -1631,11 +1692,16 @@ namespace ResonanceSimulator {
 
 namespace ResonanceSimulator {
 
-    SignalResult::SignalResult(SignalResult::Hist signal1, SignalResult::Hist signal2,
-                               const SignalResult::FitPtr &fitSignal1, const SignalResult::FitPtr &fitSignal2,
-                               const SignalResult::FitPtr &fitSignal3) : signal1(signal1), signal2(signal2),
-                                                                         fitSignal1(fitSignal1), fitSignal2(fitSignal2),
-                                                                         fitSignal3(fitSignal3) {}
+    SignalResult::SignalResult(SignalResult::Hist signal1, 
+     	SignalResult::Hist signal2,
+     	const SignalResult::FitPtr &fitSignal1, 
+     	const SignalResult::FitPtr &fitSignal2,
+     	const SignalResult::FitPtr &fitSignal3) : 
+     signal1(signal1), 
+     signal2(signal2),
+     fitSignal1(fitSignal1), 
+     fitSignal2(fitSignal2),
+     fitSignal3(fitSignal3) {}
 }
 \end{verbatim}
 
